@@ -22,3 +22,23 @@ export async function fetchCurrentWeather(city: string): Promise<WeatherResponse
   const data: WeatherResponse = await response.json();
   return data;
 }
+
+export type SearchResult = {
+    name: string;
+    country: string;
+    lat: number;
+    lon: number;
+    state?: string;
+  };
+  
+  export async function searchCities(query: string): Promise<SearchResult[]> {
+    const response = await fetch(
+      `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(query)}&limit=5&appid=${API_KEY}`
+    );
+  
+    if (!response.ok) {
+      throw new Error('Failed to search cities');
+    }
+  
+    return await response.json();
+  }

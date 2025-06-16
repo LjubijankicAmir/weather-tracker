@@ -13,14 +13,24 @@ import CityCard from '../components/CityCard';
 import { countryCodeToName } from '../utils/countryMap';
 import { useEffect } from 'react';
 import { fetchCurrentWeather, WeatherResponse } from '../services/weatherService';
+import { searchCities, SearchResult } from '../services/weatherService';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
+
 
 const CITIES = ['Sarajevo', 'Mostar', 'Zenica', 'Cazin'];
 
+type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
-export default function HomeScreen() {
+
+export default function HomeScreen({ navigation }: Props) {
 
     const [weatherData, setWeatherData] = useState<WeatherResponse[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const [query, setQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+    const [searchLoading, setSearchLoading] = useState(false);
 
     useEffect(() => {
         async function loadWeather() {
@@ -42,6 +52,25 @@ export default function HomeScreen() {
       
         loadWeather();
       }, []);
+
+      useEffect(() => {
+        const timeout = setTimeout(() => {
+          if (query.length >= 3) {
+            setSearchLoading(true);
+            searchCities(query)
+              .then(setSearchResults)
+              .catch((err) => {
+                console.error(err);
+                setSearchResults([]);
+              })
+              .finally(() => setSearchLoading(false));
+          } else {
+            setSearchResults([]);
+          }
+        }, 500);
+      
+        return () => clearTimeout(timeout);
+      }, [query]);
 
   return (
     <View style={styles.container}>
@@ -66,7 +95,33 @@ export default function HomeScreen() {
         <TextInput
           placeholder="Search for a city..."
           placeholderTextColor="#ccc"
-          style={styles.searchInput}/>
+          style={styles.searchInput}
+          value={query}
+          onChangeText={setQuery}/>
+
+        {query.length >= 3 && (
+        <View style={styles.searchDropdown}>
+            {searchLoading ? (
+            <Text style={styles.searchDropdownText}>Searching...</Text>
+            ) : searchResults.length === 0 ? (
+            <Text style={styles.searchDropdownText}>No matching cities</Text>
+            ) : (
+            searchResults.map((city, index) => (
+                <Text
+                key={`${city.name}-${index}`}
+                style={styles.searchDropdownItem}
+                onPress={() => {
+                    setQuery('');
+                    setSearchResults([]);
+                    navigation.navigate('Weather', { city: city.name });
+                }}
+                >
+                {city.name}, {city.state ? `${city.state}, ` : ''}{countryCodeToName[city.country] || city.country}
+                </Text>
+            ))
+            )}
+        </View>
+        )}
 
         <Text style={styles.sectionTitle}>Your Cities</Text>
 
@@ -117,12 +172,34 @@ const styles = StyleSheet.create({
       paddingHorizontal: 16,
       paddingVertical: 12,
       fontSize: 16,
-      marginBottom: 30,
+      marginBottom: 4,
     },
+    searchDropdown: {
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderRadius: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        marginBottom: 16,
+      },
+      searchDropdownText: {
+        color: '#444',
+        fontSize: 16,
+        textAlign: 'center',
+        paddingVertical: 4,
+      },
+      searchDropdownItem: {
+        color: '#000',
+        fontSize: 16,
+        paddingVertical: 6,
+        paddingHorizontal: 4,
+        borderBottomColor: '#ccc',
+        borderBottomWidth: 0.5,
+      },
     sectionTitle: {
       fontSize: 20,
       fontWeight: '600',
       color: '#fff',
+      marginTop: 20,
       marginBottom: 10,
     },
     loading: {
