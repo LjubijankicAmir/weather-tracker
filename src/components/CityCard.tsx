@@ -1,15 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
-import {MaterialIcons} from '@expo/vector-icons';
 
 
 type Props = {
   city: string;
   country: string;
   temperature: number;
+  iconUrl: string;
 };
 
-export default function CityCard({ city, country, temperature }: Props) {
+export default function CityCard({ city, country, temperature, iconUrl }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.infoContainer}>
@@ -19,7 +19,7 @@ export default function CityCard({ city, country, temperature }: Props) {
 
       <View style={styles.weatherContainer}>
         <Text style={styles.temp}>{temperature}°C</Text>
-        <MaterialIcons name="wb-sunny" size={24} color="orange" />
+        <Image source={{ uri: iconUrl }} style={styles.icon} />
       </View>
     </View>
   );
@@ -41,11 +41,11 @@ const styles = StyleSheet.create({
   city: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#ffffff',
   },
   country: {
     fontSize: 14,
-    color: '#444',
+    color: '#f5f5f5',
   },
   weatherContainer: {
     flexDirection: 'row',
@@ -54,11 +54,11 @@ const styles = StyleSheet.create({
   temp: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
+    color: '#ffffff',
     marginRight: 8,
   },
   icon: {
-    width: 24,
-    height: 24,
+    width: 48,
+    height: 48,
   },
 });

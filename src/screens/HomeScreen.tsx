@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,8 +10,39 @@ import {
 import { ResizeMode, Video } from 'expo-av';
 import { BlurView } from 'expo-blur';
 import CityCard from '../components/CityCard';
+import { countryCodeToName } from '../utils/countryMap';
+import { useEffect } from 'react';
+import { fetchCurrentWeather, WeatherResponse } from '../services/weatherService';
+
+const CITIES = ['Sarajevo', 'Mostar', 'Zenica', 'Cazin'];
+
 
 export default function HomeScreen() {
+
+    const [weatherData, setWeatherData] = useState<WeatherResponse[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function loadWeather() {
+          try {
+            const results: WeatherResponse[] = [];
+      
+            for (const city of CITIES) {
+              const data = await fetchCurrentWeather(city);
+              results.push(data);
+            }
+      
+            setWeatherData(results);
+          } catch (error) {
+            console.error('Weather fetch failed:', error);
+          } finally {
+            setLoading(false);
+          }
+        }
+      
+        loadWeather();
+      }, []);
+
   return (
     <View style={styles.container}>
       <Video
@@ -45,17 +76,19 @@ export default function HomeScreen() {
 
         <Text style={styles.sectionTitle}>Popular Cities</Text>
         <View style={{ marginTop: 10 }}>
-            <CityCard
-                city="Zagreb"
-                country="Croatia"
-                temperature={26}
-            />
-
-            <CityCard
-                city="Sarajevo"
-                country="Bosnia and Herzegovina"
-                temperature={22}
-            />
+        {loading ? (
+        <Text style={styles.loading}>Loading weather...</Text>
+        ) : (
+        weatherData.map((weather) => (
+                <CityCard
+                key={weather.name}
+                city={weather.name}
+                country={countryCodeToName[weather.sys.country] || weather.sys.country}
+                temperature={Math.round(weather.main.temp)}
+                iconUrl={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
+                />
+            ))
+        )}
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -92,6 +125,12 @@ const styles = StyleSheet.create({
       color: '#fff',
       marginBottom: 10,
     },
+    loading: {
+        color: '#ccc',
+        fontSize: 16,
+        textAlign: 'center',
+        marginTop: 40,
+      },      
     emptyContainer: {
       alignItems: 'center',
       marginTop: 50,
