@@ -15,7 +15,7 @@ export default function AppNavigator() {
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Home">
           <Stack.Screen name="Home" component={HomeScreen} options={{headerShown: false}} />
-          <Stack.Screen name="Weather" component={WeatherScreen} />
+          <Stack.Screen name="Weather" component={WeatherScreen} options={{headerShown: false}} />
         </Stack.Navigator>
       </NavigationContainer>
     );

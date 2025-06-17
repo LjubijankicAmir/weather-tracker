@@ -42,3 +42,58 @@ export type SearchResult = {
   
     return await response.json();
   }
+
+  export type ForecastDay = {
+    date: string;
+    temp: number;
+    icon: string;
+    description: string;
+    feels_like: number;
+    humidity: number;
+    wind_speed: number;
+    visibility: number;
+  };
+  
+  
+  export async function fetch5DayForecast(city: string): Promise<ForecastDay[]> {
+    const response = await fetch(
+      `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`
+    );
+  
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('5-day forecast error:', text);
+      throw new Error('Failed to fetch 5-day forecast');
+    }
+  
+    const data = await response.json();
+  
+    const grouped: Record<string, any[]> = {};
+  
+    for (const entry of data.list) {
+      const dateKey = entry.dt_txt.slice(0, 10);
+      if (!grouped[dateKey]) grouped[dateKey] = [];
+      grouped[dateKey].push(entry);
+    }
+  
+    const dailySummaries: ForecastDay[] = Object.keys(grouped)
+      .slice(0, 5)
+      .map((date) => {
+        const dayEntries = grouped[date];
+        const noonEntry = dayEntries.find((e) => e.dt_txt.includes('12:00:00')) || dayEntries[0];
+  
+        return {
+            date,
+            temp: noonEntry.main.temp,
+            icon: noonEntry.weather[0].icon,
+            description: noonEntry.weather[0].description,
+            feels_like: noonEntry.main.feels_like,
+            humidity: noonEntry.main.humidity,
+            wind_speed: noonEntry.wind.speed,
+            visibility: noonEntry.visibility,
+          };
+          
+      });
+  
+    return dailySummaries;
+  }

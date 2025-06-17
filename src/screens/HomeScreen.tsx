@@ -6,6 +6,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { ResizeMode, Video } from 'expo-av';
 import { BlurView } from 'expo-blur';
@@ -88,7 +89,12 @@ export default function HomeScreen({ navigation }: Props) {
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.contentContainer}>
+        style={{flex: 1}}>
+
+        <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled">
 
         <Text style={styles.title}>Weather Tracker</Text>
 
@@ -130,7 +136,7 @@ export default function HomeScreen({ navigation }: Props) {
         </View>
 
         <Text style={styles.sectionTitle}>Popular Cities</Text>
-        <View style={{ marginTop: 10 }}>
+        <View style={{ marginTop: 10, marginBottom: 30 }}>
         {loading ? (
         <Text style={styles.loading}>Loading weather...</Text>
         ) : (
@@ -145,6 +151,7 @@ export default function HomeScreen({ navigation }: Props) {
             ))
         )}
         </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
@@ -155,7 +162,6 @@ const styles = StyleSheet.create({
       flex: 1,
     },
     contentContainer: {
-      flex: 1,
       paddingHorizontal: 20,
       paddingTop: 80,
     },
