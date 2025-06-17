@@ -119,7 +119,7 @@ export default function HomeScreen({ navigation }: Props) {
                 onPress={() => {
                     setQuery('');
                     setSearchResults([]);
-                    navigation.navigate('Weather', { city: city.name });
+                    navigation.navigate('Weather', { city: city.name, lat: city.lat, lon: city.lon });
                 }}
                 >
                 {city.name}, {city.state ? `${city.state}, ` : ''}{countryCodeToName[city.country] || city.country}

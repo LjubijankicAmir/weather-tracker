@@ -9,36 +9,58 @@ import { searchCities, fetch5DayForecast, ForecastDay, SearchResult } from '../s
 import WeatherCard from '../components/WeatherCard';
 import DailyForecastCard from '../components/DailyForecastCard';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import {
+    addFavoriteCity,
+    removeFavoriteCity,
+    isCityFavorite,
+  } from '../utils/favorites';
+  import { ToastAndroid, Platform, Alert } from 'react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Weather'>;
 
 export default function WeatherScreen({ route, navigation }: Props) {
-  const { city } = route.params;
+  const { city, lat, lon } = route.params;
 
   const [cityData, setCityData] = useState<SearchResult | null>(null);
   const [forecast, setForecast] = useState<ForecastDay[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    isCityFavorite(city).then(setIsFavorite);
+  }, [city]);
+
 
   useEffect(() => {
     async function load() {
       try {
-        const cities = await searchCities(city);
-        const selected = cities[0];
-        setCityData(selected);
+        setCityData({ name: city, country: '', lat, lon }); 
   
-        const data = await fetch5DayForecast(city);
+        const data = await fetch5DayForecast(lat, lon); 
         setForecast(data);
       } catch (err) {
         console.error(err);
+        setHasError(true);
       } finally {
         setLoading(false);
       }
     }
   
     load();
-  }, [city]);
+  }, [city, lat, lon]);
+  
 
-  if (loading || !forecast || !cityData) {
+  function showToast(message: string) {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+    } else {
+      Alert.alert('', message);
+    }
+  }
+  
+  if (loading) {
     return (
       <View style={styles.container}>
         <Video
@@ -53,6 +75,33 @@ export default function WeatherScreen({ route, navigation }: Props) {
         <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
 
         <Text style={styles.loadingText}>Loading weather...</Text>
+      </View>
+    );
+  }
+
+  if (hasError || !forecast || !cityData) {
+    return (
+      <View style={styles.container}>
+        <Video
+          source={require('../../assets/clear_weather.mp4')}
+          rate={1.0}
+          isMuted
+          resizeMode={ResizeMode.COVER}
+          shouldPlay
+          isLooping
+          style={StyleSheet.absoluteFill}
+        />
+        <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
+  
+        <Ionicons
+          name="arrow-back"
+          size={28}
+          color="white"
+          style={styles.backIcon}
+          onPress={() => navigation.goBack()}
+        />
+  
+        <Text style={styles.loadingText}>No data found for this place.</Text>
       </View>
     );
   }
@@ -77,6 +126,25 @@ export default function WeatherScreen({ route, navigation }: Props) {
         style={styles.backIcon}
         onPress={() => navigation.goBack()}
       />
+
+        <MaterialIcons
+            name={isFavorite ? 'favorite' : 'favorite-border'}
+            size={28}
+            color="white"
+            style={styles.favoriteIcon}
+            onPress={async () => {
+                if (!isFavorite) {
+                await addFavoriteCity(city);
+                showToast('City saved');
+                setIsFavorite(true);
+                } else {
+                await removeFavoriteCity(city);
+                showToast('City removed');
+                setIsFavorite(false);
+                }
+            }}
+        />
+
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.titleContainer}>
@@ -145,6 +213,12 @@ export default function WeatherScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  favoriteIcon: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    zIndex: 10,
+},         
   container: {
     flex: 1,
   },
@@ -214,7 +288,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     textAlign: 'center',
-    marginTop: 150,
+    marginTop: 400,
   },
   backIcon: {
     position: 'absolute',

@@ -5,7 +5,7 @@ import WeatherScreen from "../screens/WeatherScreen";
 
 export type RootStackParamList = {
     Home: undefined;
-    Weather: {city: string};
+    Weather: {city: string; lat: number; lon: number};
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

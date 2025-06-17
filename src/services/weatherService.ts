@@ -55,9 +55,9 @@ export type SearchResult = {
   };
   
   
-  export async function fetch5DayForecast(city: string): Promise<ForecastDay[]> {
+  export async function fetch5DayForecast(lat: number, lon: number): Promise<ForecastDay[]> {
     const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`
+      `${BASE_URL}/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
     );
   
     if (!response.ok) {
@@ -83,17 +83,17 @@ export type SearchResult = {
         const noonEntry = dayEntries.find((e) => e.dt_txt.includes('12:00:00')) || dayEntries[0];
   
         return {
-            date,
-            temp: noonEntry.main.temp,
-            icon: noonEntry.weather[0].icon,
-            description: noonEntry.weather[0].description,
-            feels_like: noonEntry.main.feels_like,
-            humidity: noonEntry.main.humidity,
-            wind_speed: noonEntry.wind.speed,
-            visibility: noonEntry.visibility,
-          };
-          
+          date,
+          temp: noonEntry.main.temp,
+          icon: noonEntry.weather[0].icon,
+          description: noonEntry.weather[0].description,
+          feels_like: noonEntry.main.feels_like,
+          humidity: noonEntry.main.humidity,
+          wind_speed: noonEntry.wind.speed,
+          visibility: noonEntry.visibility,
+        };
       });
   
     return dailySummaries;
   }
+  
