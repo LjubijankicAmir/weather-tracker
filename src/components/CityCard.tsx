@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
 
 
 type Props = {
@@ -7,21 +7,21 @@ type Props = {
   country: string;
   temperature: number;
   iconUrl: string;
+  onPress?: () => void;
 };
 
-export default function CityCard({ city, country, temperature, iconUrl }: Props) {
+export default function CityCard({ city, country, temperature, iconUrl, onPress }: Props) {
   return (
-    <View style={styles.card}>
+    <Pressable onPress={onPress} style={styles.card}>
       <View style={styles.infoContainer}>
         <Text style={styles.city}>{city}</Text>
         <Text style={styles.country}>{country}</Text>
       </View>
-
       <View style={styles.weatherContainer}>
         <Text style={styles.temp}>{temperature}°C</Text>
         <Image source={{ uri: iconUrl }} style={styles.icon} />
       </View>
-    </View>
+    </Pressable>
   );
 }
 

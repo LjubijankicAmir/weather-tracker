@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,11 +12,11 @@ import { ResizeMode, Video } from 'expo-av';
 import { BlurView } from 'expo-blur';
 import CityCard from '../components/CityCard';
 import { countryCodeToName } from '../utils/countryMap';
-import { useEffect } from 'react';
 import { fetchCurrentWeather, WeatherResponse } from '../services/weatherService';
 import { searchCities, SearchResult } from '../services/weatherService';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { getFavoriteCities } from '../utils/favorites';
 
 
 const CITIES = ['Sarajevo', 'Mostar', 'Zenica', 'Cazin'];
@@ -32,6 +32,10 @@ export default function HomeScreen({ navigation }: Props) {
     const [query, setQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [searchLoading, setSearchLoading] = useState(false);
+
+    const [favoriteWeather, setFavoriteWeather] = useState<WeatherResponse[]>([]);
+    const [favoritesLoading, setFavoritesLoading] = useState(true);
+
 
     useEffect(() => {
         async function loadWeather() {
@@ -72,6 +76,28 @@ export default function HomeScreen({ navigation }: Props) {
       
         return () => clearTimeout(timeout);
       }, [query]);
+
+      useEffect(() => {
+        async function loadFavorites() {
+          try {
+            const favoriteCities = await getFavoriteCities();
+            const results: WeatherResponse[] = [];
+      
+            for (const city of favoriteCities) {
+              const data = await fetchCurrentWeather(city);
+              results.push(data);
+            }
+      
+            setFavoriteWeather(results);
+          } catch (err) {
+            console.error('Favorite weather fetch failed:', err);
+          } finally {
+            setFavoritesLoading(false);
+          }
+        }
+      
+        loadFavorites();
+      }, []);      
 
   return (
     <View style={styles.container}>
@@ -131,9 +157,40 @@ export default function HomeScreen({ navigation }: Props) {
 
         <Text style={styles.sectionTitle}>Your Cities</Text>
 
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No saved cities</Text>
-        </View>
+        {favoritesLoading ? (
+          <Text style={styles.loading}>Loading favorites...</Text>
+        ) : favoriteWeather.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No saved cities</Text>
+          </View>
+        ) : (
+          <View style={{marginTop: 10, marginBottom: 20 }}>
+            {favoriteWeather.map((weather) => (
+              <CityCard
+                key={weather.name}
+                city={weather.name}
+                country={countryCodeToName[weather.sys.country] || weather.sys.country}
+                temperature={Math.round(weather.main.temp)}
+                iconUrl={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
+                onPress={async () => {
+                  try {
+                    const results = await searchCities(weather.name);
+                    if (results.length === 0) throw new Error();
+              
+                    const match = results[0];
+                    navigation.navigate('Weather', {
+                      city: match.name,
+                      lat: match.lat,
+                      lon: match.lon,
+                    });
+                  } catch {
+                    console.warn('Failed to locate city coordinates.');
+                  }
+                }}
+              />
+            ))}
+          </View>
+        )}
 
         <Text style={styles.sectionTitle}>Popular Cities</Text>
         <View style={{ marginTop: 10, marginBottom: 30 }}>
@@ -147,6 +204,21 @@ export default function HomeScreen({ navigation }: Props) {
                 country={countryCodeToName[weather.sys.country] || weather.sys.country}
                 temperature={Math.round(weather.main.temp)}
                 iconUrl={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
+                onPress={async () => {
+                  try {
+                    const results = await searchCities(weather.name);
+                    if (results.length === 0) throw new Error();
+              
+                    const match = results[0];
+                    navigation.navigate('Weather', {
+                      city: match.name,
+                      lat: match.lat,
+                      lon: match.lon,
+                    });
+                  } catch {
+                    console.warn('Failed to locate city coordinates.');
+                  }
+                }}
                 />
             ))
         )}
