@@ -5,7 +5,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { countryCodeToName } from '../utils/countryMap';
 import { ResizeMode, Video } from 'expo-av';
 import { BlurView } from 'expo-blur';
-import { searchCities, fetch5DayForecast, ForecastDay, SearchResult } from '../services/weatherService';
+import { fetch5DayForecast, ForecastDay, SearchResult, WeatherResponse, fetchCurrentWeatherByCoords } from '../services/weatherService';
 import WeatherCard from '../components/WeatherCard';
 import DailyForecastCard from '../components/DailyForecastCard';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -15,18 +15,21 @@ import {
     isCityFavorite,
   } from '../utils/favorites';
   import { ToastAndroid, Platform, Alert } from 'react-native';
+import { backgroundMap } from '../utils/backgroundMap';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Weather'>;
 
 export default function WeatherScreen({ route, navigation }: Props) {
   const { city, lat, lon } = route.params;
-
   const [cityData, setCityData] = useState<SearchResult | null>(null);
   const [forecast, setForecast] = useState<ForecastDay[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
   const [isFavorite, setIsFavorite] = useState(false);
+
+  const [current, setCurrent] = useState<WeatherResponse | null>(null);
+
 
   useEffect(() => {
     isCityFavorite(city).then(setIsFavorite);
@@ -37,7 +40,10 @@ export default function WeatherScreen({ route, navigation }: Props) {
     async function load() {
       try {
         setCityData({ name: city, country: '', lat, lon }); 
-  
+
+        const currentData = await fetchCurrentWeatherByCoords(lat, lon);
+        setCurrent(currentData);
+
         const data = await fetch5DayForecast(lat, lon); 
         setForecast(data);
       } catch (err) {
@@ -64,7 +70,7 @@ export default function WeatherScreen({ route, navigation }: Props) {
     return (
       <View style={styles.container}>
         <Video
-          source={require('../../assets/clear_weather.mp4')}
+          source={ backgroundMap[current?.weather[0].main as string] || require('../../assets/clear_weather.mp4')}
           rate={1.0}
           isMuted
           resizeMode={ResizeMode.COVER}
@@ -83,7 +89,7 @@ export default function WeatherScreen({ route, navigation }: Props) {
     return (
       <View style={styles.container}>
         <Video
-          source={require('../../assets/clear_weather.mp4')}
+          source={ backgroundMap[current?.weather[0].main as string] || require('../../assets/clear_weather.mp4')}
           rate={1.0}
           isMuted
           resizeMode={ResizeMode.COVER}
@@ -109,7 +115,7 @@ export default function WeatherScreen({ route, navigation }: Props) {
   return (
     <View style={styles.container}>
       <Video
-        source={require('../../assets/clear_weather.mp4')}
+        source={ backgroundMap[current?.weather[0].main as string] || require('../../assets/clear_weather.mp4')}
         rate={1.0}
         isMuted
         resizeMode={ResizeMode.COVER}
@@ -150,40 +156,41 @@ export default function WeatherScreen({ route, navigation }: Props) {
         <View style={styles.titleContainer}>
           <Text style={styles.city}>{city}</Text>
           <Text style={styles.country}>
-            {countryCodeToName[cityData.country] || cityData.country}
+            {countryCodeToName[current?.sys.country as string] || cityData.country}
           </Text>
         </View>
 
         <WeatherCard
-        temperature={Math.round(forecast[0].temp)}
-        iconCode={forecast[0].icon}
+        temperature={Math.round(current!.main.temp)}
+        iconCode={current!.weather[0].icon}
         />
 
+
         <View style={styles.extraInfo}>
-        <Text style={styles.descriptionText}>
-            {forecast[0].description.charAt(0).toUpperCase() + forecast[0].description.slice(1)}
-        </Text>
+          <Text style={styles.descriptionText}>
+          {current!.weather[0].description.charAt(0).toUpperCase() + current!.weather[0].description.slice(1)}
+          </Text>
 
-        <Text style={styles.feelsLikeText}>
-            Feels like: {Math.round(forecast[0].feels_like)}°C
-        </Text>
+          <Text style={styles.feelsLikeText}>
+            Feels like: {Math.round(current!.main.feels_like)}°C
+          </Text>
 
-        <View style={styles.infoRow}>
+          <View style={styles.infoRow}>
             <View style={styles.infoItem}>
-                <MaterialIcons name="water-drop" size={24} color="#fff" />
-                <Text style={styles.infoText}>{forecast[0].humidity}%</Text>
+              <MaterialIcons name="water-drop" size={24} color="#fff" />
+              <Text style={styles.infoText}>{current!.main.humidity}%</Text>
             </View>
 
             <View style={styles.infoItem}>
-                <MaterialIcons name="air" size={24} color="#fff" />
-                <Text style={styles.infoText}>{forecast[0].wind_speed} m/s</Text>
+              <MaterialIcons name="air" size={24} color="#fff" />
+              <Text style={styles.infoText}>{current!.wind.speed} m/s</Text>
             </View>
 
             <View style={styles.infoItem}>
-                <MaterialIcons name="visibility" size={24} color="#fff" />
-                <Text style={styles.infoText}>{forecast[0].visibility / 1000} km</Text>
+              <MaterialIcons name="visibility" size={24} color="#fff" />
+              <Text style={styles.infoText}>{current!.visibility / 1000} km</Text>
             </View>
-        </View>
+          </View>
         </View>
 
 
@@ -207,6 +214,7 @@ export default function WeatherScreen({ route, navigation }: Props) {
             })}
         </ScrollView>
         </View>
+
       </ScrollView>
     </View>
   );

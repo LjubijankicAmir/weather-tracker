@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   StyleSheet,
   View,
@@ -77,27 +78,30 @@ export default function HomeScreen({ navigation }: Props) {
         return () => clearTimeout(timeout);
       }, [query]);
 
-      useEffect(() => {
-        async function loadFavorites() {
-          try {
-            const favoriteCities = await getFavoriteCities();
-            const results: WeatherResponse[] = [];
+      useFocusEffect(
+        React.useCallback(() => {
+          async function loadFavorites() {
+            try {
+              const favoriteCities = await getFavoriteCities();
+              const results: WeatherResponse[] = [];
       
-            for (const city of favoriteCities) {
-              const data = await fetchCurrentWeather(city);
-              results.push(data);
+              for (const city of favoriteCities) {
+                const data = await fetchCurrentWeather(city);
+                results.push(data);
+              }
+      
+              setFavoriteWeather(results);
+            } catch (err) {
+              console.error('Favorite weather fetch failed:', err);
+            } finally {
+              setFavoritesLoading(false);
             }
-      
-            setFavoriteWeather(results);
-          } catch (err) {
-            console.error('Favorite weather fetch failed:', err);
-          } finally {
-            setFavoritesLoading(false);
           }
-        }
       
-        loadFavorites();
-      }, []);      
+          loadFavorites();
+        }, [])
+      );
+           
 
   return (
     <View style={styles.container}>

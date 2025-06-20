@@ -4,9 +4,20 @@ const BASE_URL = 'https://api.openweathermap.org/data/2.5';
 export type WeatherResponse = {
   name: string;
   sys: { country: string };
-  main: { temp: number };
+  main: {
+    temp: number;
+    feels_like: number;
+    humidity: number;
+    pressure: number;
+  };
+  wind: {
+    speed: number;
+    deg: number;
+  };
+  visibility: number;
   weather: { main: string; description: string; icon: string }[];
 };
+
 
 
 export async function fetchCurrentWeather(city: string): Promise<WeatherResponse> {
@@ -47,11 +58,6 @@ export type SearchResult = {
     date: string;
     temp: number;
     icon: string;
-    description: string;
-    feels_like: number;
-    humidity: number;
-    wind_speed: number;
-    visibility: number;
   };
   
   
@@ -96,4 +102,18 @@ export type SearchResult = {
   
     return dailySummaries;
   }
+
+  export async function fetchCurrentWeatherByCoords(lat: number, lon: number): Promise<WeatherResponse> {
+    const response = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
+    );
+  
+    if (!response.ok) {
+      throw new Error('Failed to fetch current weather');
+    }
+    
+    const data = await response.json();
+    return data as WeatherResponse;
+  }
+  
   
