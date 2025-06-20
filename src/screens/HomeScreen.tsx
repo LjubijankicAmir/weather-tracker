@@ -20,7 +20,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { getFavoriteCities } from '../utils/favorites';
 
 
-const CITIES = ['Sarajevo', 'Mostar', 'Zenica', 'Cazin'];
+const CITIES = ['Sarajevo', 'Split', 'Beograd', 'Podgorica'];
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
